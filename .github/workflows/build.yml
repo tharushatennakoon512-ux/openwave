@@ -16,7 +16,16 @@ jobs:
           wget -q https://services.gradle.org/distributions/gradle-8.9-bin.zip
           unzip -q gradle-8.9-bin.zip -d "$HOME"
           echo "$HOME/gradle-8.9/bin" >> "$GITHUB_PATH"
-      - run: gradle --version
+      - name: Show signatures
+        run: |
+          cd app/src/main/java/com/openwave
+          find . -name "*.kt" | sort
+          for f in $(grep -rlE "(class|interface) (PlaybackUiState|RecommendationSource|AudioExtractorService|CachedStream|LocalLibraryRepository|StreamExtractor|QueueManager|LocalDownloadManager|RecommendationEngine)\b" .); do
+            echo "=== $f"
+            grep -nE "^\s*((abstract|override|suspend|data|sealed|enum|open|private|interface|class|object|fun|val|var) )" "$f" | head -70
+          done
+          echo "=== StreamCacheAdapter"
+          cat player/StreamCacheAdapter.kt
       - name: Build
         run: |
           set +e
@@ -25,6 +34,7 @@ jobs:
           grep -E "^e: " build.log | head -60
           exit $code
       - uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: OpenWave-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
