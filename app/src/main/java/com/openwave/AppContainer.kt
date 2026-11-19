@@ -28,7 +28,8 @@ class AppContainer(app: Application) {
     private val listenHistoryDao = streamDb.listenHistoryDao()
 
     val library = LocalLibraryRepository(LocalLibraryDatabase.create(app).localTrackDao())
-    val extractor = AudioExtractorService(app)
+    // No StreamExtractor implementations exist yet; add them to this list.
+    val extractor = AudioExtractorService(emptyList())
     val streamCache = StreamCacheRepository(
         dao = streamDb.streamCacheDao(),
         extractor = extractor, scope = bgScope, clock = clock,
@@ -43,11 +44,13 @@ class AppContainer(app: Application) {
 
     val history = MutableStateFlow<List<ListenEvent>>(emptyList())
     val pool = MutableStateFlow<Map<String, AudioTrack>>(emptyMap())
+    val likedIds = MutableStateFlow<Set<String>>(emptySet())
     private val lastTrack = MutableStateFlow<AudioTrack?>(null)
 
     private val recSource = object : RecommendationSource {
         override suspend fun seedTrack(): AudioTrack? = lastTrack.value
-        override suspend fun candidates(): List<AudioTrack> = pool.value.values.toList()
+        override suspend fun candidates(seed: AudioTrack): List<AudioTrack> =
+            pool.value.values.filter { it.id != seed.id }
         override suspend fun history(): List<ListenEvent> = this@AppContainer.history.value
     }
 
@@ -73,7 +76,7 @@ class AppContainer(app: Application) {
                 }
             }
         }
-        uiScope.launch { library.observeCompleted().collect { remember(it) } }
+        uiScope.launch { library.tracks.collect { remember(it) } }
         uiScope.launch { playlists.state.collect { m -> remember(m.values.flatten()) } }
     }
 
@@ -81,6 +84,12 @@ class AppContainer(app: Application) {
     fun go(block: suspend () -> Unit) { uiScope.launch { block() } }
     fun play(t: AudioTrack) = go { queueManager.playTrack(t) }
     fun playAll(l: List<AudioTrack>) = go { if (l.isNotEmpty()) { queueManager.playTrack(l.first()); l.drop(1).forEach { queueManager.enqueue(it) } } }
+
+    fun toggleLike(t: AudioTrack) {
+        val nowLiked = t.id !in likedIds.value
+        likedIds.update { if (nowLiked) it + t.id else it - t.id }
+        queueManager.setLiked(t.id, nowLiked)
+    }
 
     suspend fun search(q: String): List<SearchResult> {
         val raw = extractor.search(q)
