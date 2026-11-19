@@ -1,0 +1,14 @@
+-keep class com.openwave.core.model.** { *; }
+-keep class com.openwave.cache.** { *; }
+-keep class com.openwave.library.** { *; }
+-keep @androidx.room.Entity class * { *; }
+-keep class * extends androidx.room.RoomDatabase
+-keep class androidx.media3.** { *; }
+-dontwarn androidx.media3.**
+-keep class com.openwave.player.PlaybackService { *; }
+-keep class org.schabi.newpipe.** { *; }
+-keep class org.mozilla.javascript.** { *; }
+-dontwarn org.mozilla.javascript.**
+-dontwarn javax.script.**
+-dontwarn okhttp3.**
+-keepclassmembers class kotlinx.coroutines.** { volatile <fields>; }
