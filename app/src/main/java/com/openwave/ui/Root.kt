@@ -26,9 +26,9 @@ enum class Screen(val title: String) { Player("Now playing"), Search("Search"), 
 /** Compact view of PlaybackUiState. ASSUMPTION: field names below match A2's PlaybackUiState; fix here only. */
 data class PlayerView(
     val track: AudioTrack?, val queue: List<AudioTrack>, val index: Int, val playing: Boolean,
-    val shuffle: Boolean, val repeat: String, val liked: Boolean, val error: String?,
+    val shuffle: Boolean, val repeat: String, val error: String?,
 )
-fun PlaybackUiState.toView() = PlayerView(currentTrack, queue, currentIndex, isPlaying, shuffle, repeatMode.name, isLiked, error)
+fun PlaybackUiState.toView() = PlayerView(currentTrack, queue, currentIndex, isPlaying, shuffleEnabled, repeatMode.name, error)
 
 @Composable
 fun OpenWaveRoot(c: AppContainer) {
