@@ -17,7 +17,13 @@ jobs:
           unzip -q gradle-8.9-bin.zip -d "$HOME"
           echo "$HOME/gradle-8.9/bin" >> "$GITHUB_PATH"
       - run: gradle --version
-      - run: gradle assembleDebug --stacktrace
+      - name: Build
+        run: |
+          set +e
+          gradle assembleDebug --console=plain > build.log 2>&1
+          code=$?
+          grep -E "^e: " build.log | head -60
+          exit $code
       - uses: actions/upload-artifact@v4
         with:
           name: OpenWave-debug-apk
