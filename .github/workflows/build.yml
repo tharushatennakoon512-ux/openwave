@@ -16,22 +16,26 @@ jobs:
           wget -q https://services.gradle.org/distributions/gradle-8.9-bin.zip
           unzip -q gradle-8.9-bin.zip -d "$HOME"
           echo "$HOME/gradle-8.9/bin" >> "$GITHUB_PATH"
-      - name: Show signatures
-        run: |
-          cd app/src/main/java/com/openwave
-          find . -name "*.kt" | sort
-          for f in $(grep -rlE "(class|interface) (PlaybackUiState|RecommendationSource|AudioExtractorService|CachedStream|LocalLibraryRepository|StreamExtractor|QueueManager|LocalDownloadManager|RecommendationEngine)\b" .); do
-            echo "=== $f"
-            grep -nE "^\s*((abstract|override|suspend|data|sealed|enum|open|private|interface|class|object|fun|val|var) )" "$f" | head -70
-          done
-          echo "=== StreamCacheAdapter"
-          cat player/StreamCacheAdapter.kt
       - name: Build
         run: |
           set +e
+          (
+            cd app/src/main/java/com/openwave
+            echo "##### FILES"; find . -name "*.kt" | sort
+            echo "##### DECLARATIONS"
+            for f in $(grep -rlE "(class|interface|object) (PlaybackUiState|RecommendationSource|AudioExtractorService|CachedStream|LocalLibraryRepository|StreamExtractor|QueueManager|LocalDownloadManager|RecommendationEngine|DownloadState)([^A-Za-z]|$)" .); do
+              echo "=== $f"
+              grep -nE "^\s*(abstract |override |suspend |data |sealed |enum |open |private |internal )*(fun|val|var|class|interface|object) " "$f" | head -60
+            done
+            echo "##### EXTRACTOR IMPLEMENTATIONS"
+            grep -rnE ":\s*StreamExtractor" . | head
+            echo "##### ADAPTER"
+            cat player/StreamCacheAdapter.kt
+            echo "##### ERRORS"
+          )
           gradle assembleDebug --console=plain > build.log 2>&1
           code=$?
-          grep -E "^e: " build.log | head -60
+          grep -E "^e: " build.log | head -40
           exit $code
       - uses: actions/upload-artifact@v4
         if: success()
