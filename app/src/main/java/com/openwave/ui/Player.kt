@@ -26,6 +26,7 @@ private fun fmt(ms: Long): String { val s = (ms / 1000).coerceAtLeast(0); return
 @Composable
 fun PlayerScreen(c: AppContainer, pv: PlayerView) {
     val pos by c.queueManager.positionMs.collectAsState()
+    val likedIds by c.likedIds.collectAsState()
     val t = pv.track
     val dur = (t?.durationMs ?: 0L).coerceAtLeast(1L)
     var drag by remember { mutableStateOf<Float?>(null) }
@@ -51,7 +52,8 @@ fun PlayerScreen(c: AppContainer, pv: PlayerView) {
             GlassIcon(Icons.Rounded.SkipPrevious, "Previous", { c.go { q.previous() } })
             GlassIcon(Icons.Rounded.SkipNext, "Next", { c.go { q.next() } })
             GlassIcon(Icons.Rounded.Repeat, "Repeat ${pv.repeat}", { c.go { q.cycleRepeat() } }, if (pv.repeat != "OFF") Accent else Marble)
-            GlassIcon(if (pv.liked) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder, "Like", { c.go { q.setLiked(!pv.liked) } }, if (pv.liked) Accent else Marble)
+                        val liked = t != null && t.id in likedIds
+            GlassIcon(if (liked) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder, "Like", { if (t != null) c.toggleLike(t) }, if (liked) Accent else Marble)
         }
         pv.error?.let { Text("$it (tap to dismiss)", color = Accent, fontSize = 13.sp, modifier = Modifier.clip(RoundedCornerShape(8.dp)).springPress { c.go { q.dismissError() } }) }
         Row(verticalAlignment = Alignment.CenterVertically) {
