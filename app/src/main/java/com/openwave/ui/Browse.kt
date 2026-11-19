@@ -149,7 +149,7 @@ fun PlaylistsScreen(c: AppContainer) {
 fun DownloadsScreen(c: AppContainer) {
     val ctx = LocalContext.current
     val states by c.downloads.states.collectAsState()
-    val done by remember { c.library.observeCompleted() }.collectAsState(emptyList())
+    val done by c.library.tracks.collectAsState(emptyList<AudioTrack>())
     val bytes by c.library.totalStorageBytes.collectAsState(0L)          // ASSUMPTION: Flow<Long>
     val active = states.filter { it.value !is DownloadState.Idle && it.value !is DownloadState.Completed }.entries.toList()
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
